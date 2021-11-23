@@ -1,0 +1,17 @@
+{
+  "name": "rtchart",
+  "version": "1.0.0",
+  "description": "real time chart",
+  "main": "rtchart.js",
+  "scripts": {
+    "test": "node rtchart.js"
+  },
+  "author": "tongpengfei",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "system-sleep": "^1.3.7",
+    "websocket": "^1.0.34",
+    "yargs": "^17.2.1"
+  }
+}
