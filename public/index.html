@@ -1,0 +1,237 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<link rel="icon" href="https://static.jianshukeji.com/highcharts/images/favicon.ico">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="https://cdn.highcharts.com.cn/highcharts/highcharts.js"></script>
+	<script src="https://cdn.highcharts.com.cn/highcharts/modules/exporting.js"></script>
+	<script src="https://img.hcharts.cn/highcharts-plugins/highcharts-zh_CN.js"></script>
+</head>
+<body>
+    <label id="error_msg"></label>
+ 	<div id="charts">
+	</div>
+
+	<script>
+		var dict_chart = {};
+
+		//series = [{ name:"line0", data:[1,2,3] },
+        //          { name:"line1", data:[4,5,6] }];
+
+		//series = [{ name:"line0", data:[{x:1,y:2},{x:2,y:3},{x:3,y:4}] },
+        //          { name:"line1", data:[ [4,5], [6,7], [8,9] ] }];
+
+		function create_chart(id, title, series, x_is_time){
+			if( dict_chart.hasOwnProperty(id) ){
+				return dict_chart[id];
+			}
+
+			for( var i=0; i<series.length; ++i ){
+				var s = series[i];
+				if( s.id == undefined ){
+					s.id = s.name;
+				}
+			}
+
+			var div = document.getElementById("charts");
+			var div_new = document.createElement("div");
+			div_new.id = id;
+			//div_new.style = "min-width:400px;height:400px";
+			div_new.style = "max-width:1000px;height:400px";
+			div.appendChild(div_new);
+
+			var xAxis = { title: { text: null } };
+			var tooltip = { shared: true, crosshairs: true };
+			if( x_is_time ){
+				xAxis = { type: 'datetime', tickPixelInterval: 100 };
+
+				tooltip = {
+					shared: true,
+					crosshairs: true,
+					dateTimeLabelFormats: {
+						millisecond: '%H:%M:%S.%L',
+						second: '%H:%M:%S',
+						minute: '%H:%M',
+						hour: '%H:%M',
+						day: '%Y-%m-%d',
+						week: '%m-%d',
+						month: '%Y-%m',
+						year: '%Y'
+					},
+
+					/*
+					formatter: function () {
+						return '<b>' + this.series.name + '</b><br/>' +
+							Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x) + '<br/>' +
+							Highcharts.numberFormat(this.y, 2);
+					}
+					*/
+				};
+			}
+
+			var chart = Highcharts.chart(id, {
+				chart: { 
+					//type: 'spline',
+					//type: 'line',
+					zoomType: 'x',
+					marginRight: 10,
+					events: {
+						load: function () {
+						}
+					}
+				},
+				title: { text: title},
+				//subtitle: { text: 'Resize the frame to see the legend position change' },
+				//xAxis: { title: { text: "xAxis" }, type: 'datetime', tickPixelInterval: 100 },
+				xAxis: xAxis,
+				yAxis: { title: { text: null } },
+
+				tooltip: tooltip,
+
+				plotOptions : {
+					series: {
+						marker: { enabled: false },
+						label: {
+							connectorAllowed: false
+						},
+						pointStart: 0
+					}
+				},
+
+				legend: {
+					layout: 'vertical',
+					align: 'right',
+					verticalAlign: 'middle'
+				},
+
+				responsive: {
+					rules: [{
+						condition: { maxWidth: 300 },
+						chartOptions: {
+							legend: {
+								layout: 'horizontal',
+								align: 'center',
+								verticalAlign: 'bottom'
+							}
+						}
+					}]
+				},
+
+				series : series || []
+			});
+
+			chart.x_is_time = x_is_time || false;
+
+			dict_chart[id] = chart;
+			return chart;
+		}
+
+		function get_chart(id){
+			if( !dict_chart.hasOwnProperty(id) ){
+				return null;
+			}
+			return dict_chart[id];
+		}
+
+		function add_point(id, key, data){
+			var c = get_chart(id);
+			if( null == c ) return;
+
+			var s = c.get(key);
+
+			if( null == s ){
+				s = c.addSeries({id:key, name:key, data:[]});
+			}
+
+			if( s.points.length > 5000 ){
+				s.addPoint( data, true, true );
+			}else{
+				s.addPoint( data, true, false );
+			}
+		}
+
+		//{ t:123, key0:'a', key1:'b' }
+		function add_json(id, obj){
+			var c = get_chart(id);
+			if( null == c ){
+				var has_time = obj.hasOwnProperty('t') || obj.hasOwnProperty('time');
+				c = create_chart(id, id, [], has_time);
+			}
+
+			var time = null;
+			if( c.x_is_time ){
+				time = obj.hasOwnProperty('t') && obj['t'] || obj.hasOwnProperty('time') && obj['time'];
+			}
+
+			for( var k in obj ){
+				if( k == '__id' ){
+					continue;
+				}
+
+				if( k == 't' || k == 'time' ){
+					continue;
+				}
+
+				var v = obj[k];
+				add_point(id, k, [time, v]);
+			}
+		}
+
+		Highcharts.setOptions({ global: { useUTC: false } });
+		function activeLastPointToolip(chart) {
+			var points = chart.series[0].points;
+			chart.tooltip.refresh(points[points.length -1]);
+		}
+
+        function get_request() {
+            var url = location.search;
+            var req = new Object();
+            if (url.indexOf("?") != -1) {
+                var str = url.substr(1);
+                strs = str.split("&");
+                for(var i = 0; i < strs.length; i ++) {
+                    req[strs[i].split("=")[0]]=decodeURI(strs[i].split("=")[1]);
+                }
+            }
+            return req;
+        } 
+
+        var req = get_request();
+        var port = 8081;
+        if( req.hasOwnProperty('port') ){
+            port = req['port'];
+        }
+
+        var host = window.location.host; 
+        //var ws = new WebSocket("ws://10.14.224.16:8081");
+        var ws = new WebSocket("ws://" + host + ":" + port);
+        ws.onopen = function(){
+        };
+
+        ws.onerror = function(e) {
+			var label = document.getElementById("error_msg");
+            label.innerText = `connect to ws://${host}:${port} fail`;
+        };
+                
+        ws.onmessage = function (e) { 
+            //{ t:0, y: 0}
+            //console.log( e.data );
+
+            var data = JSON.parse(e.data);
+			if( data.__id == undefined ){
+				data.__id = "default";
+			}
+
+			var t = (data.t || data.time);
+			//add_point("chart_rtc", "rtc", [t, data.y]);
+			add_json(data.__id, data);
+			//activeLastPointToolip(c_rtc);
+        };
+                
+        ws.onclose = function(){ 
+        };
+	</script>
+
+</body>
+</html>

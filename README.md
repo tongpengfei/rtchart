@@ -31,6 +31,7 @@ node rtchart.js
 
 #start client
 ```bash
+$ touch a.txt
 $ tail -F a.txt | ./rtchart_cli.js
 ```
 
