@@ -59,10 +59,34 @@ ws_data.on('request', function(request) {
             //console.log('Received Message: ' + msg.utf8Data);
             //connection.sendUTF(msg.utf8Data);
             //{x:0,y:0}
-            data_source.push( msg.utf8Data );
+            //data_source.push( msg.utf8Data );
+
+			var __uid = undefined;
+		    if( msg.utf8Data.startsWith('{') ){
+                //json
+				var jobj = JSON.parse(msg.utf8Data);
+				__uid = jobj.__uid;
+            }else{
+                //k:v,k2,v2
+				var keys = msg.utf8Data.split(':');
+				for( var str in keys ){
+					if( str.startsWith('__uid') ){
+						var kv = str.split(',');
+						__uid = kv[1];
+					}
+				}
+            }
+
+			if( __uid == undefined ){
+				__uid = null;
+			}else{
+				__uid = __uid.toString();
+			}
+
+			console.log("__uid:" + __uid);
 
             //dispatch
-            ec.dispatch( "append", msg.utf8Data );
+            ec.dispatch( "append", __uid, msg.utf8Data );
         } else if (msg.type === 'binary') {
             console.log('Received Binary Message of ' + msg.binaryData.length + ' bytes');
             conn.sendBytes(msg.binaryData);
@@ -94,22 +118,27 @@ ws_chart.on('request', function(request) {
     var conn = request.accept(null, request.origin);
     console.log((new Date()) + ' Connection accepted.');
 
+	conn.uid = null;
+
     //register listener
-    var cb = function( data ){
+    var cb = function( uid, data ){
+		if( conn.uid != null ){
+			if( conn.uid != uid ) return;
+		}
         conn.sendUTF( data );
     }
 
     ec.regListener( "append", cb );
 
-    //var l = data_source.length >= 100 ? 100 : data_source.length;
-    //for( var i=l-1; i>=0; --i ){
-    //    conn.sendUTF( data_source[i] );
-    //}
-
     conn.on('message', function(msg) {
         if (msg.type === 'utf8') {
             //console.log('Received Message: ' + msg.utf8Data);
             //conn.sendUTF(msg.utf8Data);
+		    var json = JSON.parse(msg.utf8Data)
+            if( json.type == "set_uid" ){
+                console.log('set_uid: ' + json.uid);
+                conn.uid = json.uid;
+            }
         } else if (msg.type === 'binary') {
             //console.log('Received Binary Message of ' + msg.binaryData.length + ' bytes');
             //conn.sendBytes(msg.binaryData);

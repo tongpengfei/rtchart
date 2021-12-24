@@ -26,13 +26,13 @@ class EventController{
             }
         }
     }
-    dispatch( type, e ){
+    dispatch( type, uid, e ){
         var vec = this.listeners[type];
         if( null == vec ) return
 
         for( var i=0,l=vec.length; i<l; ++i ){
             var cb = vec[i];
-            cb(e);
+            cb(uid, e);
         }
     }
 }

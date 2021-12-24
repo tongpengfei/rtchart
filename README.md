@@ -48,3 +48,9 @@ $ node ./test.js
 or
 $ echo __id:test,a:1,b:2 >> ./a.txt
 ```
+
+#filter by uid for multiple user report logs
+```bash
+http://${REPLACE_TO_YOUR_WEBSERVER_IP}?port=8081&uid=123
+$ echo __id:test,__uid:123,a:1,b:2 >> ./a.txt
+```

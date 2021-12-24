@@ -199,14 +199,21 @@
 
         var req = get_request();
         var port = 8081;
+		var uid = null;
         if( req.hasOwnProperty('port') ){
             port = req['port'];
         }
+		if( req.hasOwnProperty('uid') ){
+			uid = req['uid'];
+		}
 
         var host = window.location.host; 
         //var ws = new WebSocket("ws://10.14.224.16:8081");
         var ws = new WebSocket("ws://" + host + ":" + port);
         ws.onopen = function(){
+			if( null != uid ){
+				ws.send( `{"type":"set_uid", "uid":"${uid}"}`);
+			}
         };
 
         ws.onerror = function(e) {
