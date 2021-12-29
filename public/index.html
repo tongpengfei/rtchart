@@ -211,8 +211,9 @@
 		}
 
         var host = window.location.host; 
+		var ip = host.split(":")[0];
         //var ws = new WebSocket("ws://10.14.224.16:8081");
-        var ws = new WebSocket("ws://" + host + ":" + port);
+        var ws = new WebSocket("ws://" + ip + ":" + port);
         ws.onopen = function(){
 			if( null != uid ){
 				ws.send( `{"type":"set_uid", "uid":"${uid}"}`);
@@ -221,7 +222,7 @@
 
         ws.onerror = function(e) {
 			var label = document.getElementById("error_msg");
-            label.innerText = `connect to ws://${host}:${port} fail`;
+            label.innerText = `connect to ws://${ip}:${port} fail`;
         };
                 
         ws.onmessage = function (e) { 

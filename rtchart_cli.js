@@ -35,18 +35,9 @@ client.on('connect', function(connection) {
         terminal: false
     });
 
-	//json
-	//key1:value1,key2:value2
-
-	//__id:rtc,t:1637134585167,y:0.12,dt:93
-
-    rl.on('line', function(line){
-        //console.log(line);
-
-		line = line.trim();
-
+	var func_send = function(conn, line){
 		if( line.startsWith('{') ){
-        	connection.sendUTF(line);
+        	conn.sendUTF(line);
 		}else{
 			//convert to json
 			var list = line.split(",");
@@ -76,8 +67,19 @@ client.on('connect', function(connection) {
 			}
 
 			var jstr = JSON.stringify(jobj);
-        	connection.sendUTF(jstr);
+        	conn.sendUTF(jstr);
 		}
+	};
+
+	//json
+	//{key1:value1,key2:value2}
+
+	//__id:rtc,t:1637134585167,y:0.12,dt:93
+
+	var pre_buff = null;
+
+    rl.on('line', function(line){
+		func_send(connection, line);
     })
 });
 

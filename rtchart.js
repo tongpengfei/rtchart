@@ -53,6 +53,7 @@ ws_data = new WebSocketServer({
 
 ws_data.on('request', function(request) {
     var conn = request.accept(null, request.origin);
+
     console.log((new Date()) + ' connection accepted.');
     conn.on('message', function(msg) {
         if (msg.type === 'utf8') {
@@ -60,15 +61,16 @@ ws_data.on('request', function(request) {
             //connection.sendUTF(msg.utf8Data);
             //{x:0,y:0}
             //data_source.push( msg.utf8Data );
+			var txt = msg.utf8Data;
 
 			var __uid = undefined;
-		    if( msg.utf8Data.startsWith('{') ){
+		    if( txt.startsWith('{') ){
                 //json
-				var jobj = JSON.parse(msg.utf8Data);
+				var jobj = JSON.parse(txt);
 				__uid = jobj.__uid;
             }else{
                 //k:v,k2,v2
-				var keys = msg.utf8Data.split(':');
+				var keys = txt.split(':');
 				for( var str in keys ){
 					if( str.startsWith('__uid') ){
 						var kv = str.split(',');
@@ -83,12 +85,11 @@ ws_data.on('request', function(request) {
 				__uid = __uid.toString();
 			}
 
-			console.log("__uid:" + __uid);
-
             //dispatch
-            ec.dispatch( "append", __uid, msg.utf8Data );
+            ec.dispatch( "append", __uid, txt );
+			//console.log("dispatch", txt);
         } else if (msg.type === 'binary') {
-            console.log('Received Binary Message of ' + msg.binaryData.length + ' bytes');
+            //console.log('Received Binary Message of ' + msg.binaryData.length + ' bytes');
             conn.sendBytes(msg.binaryData);
         }
     });
@@ -119,7 +120,6 @@ ws_chart.on('request', function(request) {
     console.log((new Date()) + ' Connection accepted.');
 
 	conn.uid = null;
-
     //register listener
     var cb = function( uid, data ){
 		if( conn.uid != null ){
